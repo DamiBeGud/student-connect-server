@@ -6,6 +6,7 @@ const Profile = require('./Profile')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
+const BoardPost = require('./BoardPost')
 
 const PORT = 8080;
 
@@ -167,6 +168,80 @@ app.post('/profile/update/:id', async (req, res)=>{
 
 
 })
+
+app.post('/boardpost/new/:id', async(req,res)=>{
+    try {
+        
+        //get all data
+        const {
+           firstname,
+           lastname,
+           postText,
+           imageUrl
+    } = req.body
+    const id = req.params.id
+    
+    //add new Board Post to DB 
+    const newPost = await BoardPost.create({
+        
+        userID: id,
+        firstname,
+        lastname,
+        postText,
+        imageUrl
+    })
+    res.status(200).json({
+        success:true,
+        newpost:true,
+        data:newPost
+    })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('Something went wrong')
+    }
+
+})
+app.post('/boardpost/comment/new/:userID/:postID', async(req,res)=>{
+    try {
+        //get all data 
+        const {
+            firstname,
+            lastname,
+            comment,
+            profileImgUrl
+     } = req.body
+     const postID = req.params.postID
+     const userID = req.params.userID
+     const commentObject = {
+        userID: userID,
+        firstname:firstname,
+        lastname:lastname,
+        comment:comment,
+        profileImgUrl:profileImgUrl
+     }
+     //find the post in DB 
+     const findPost = await BoardPost.findOneAndUpdate({_id:postID},{$push:{comments:commentObject}})
+
+     console.log(findPost)
+    } catch (error) {
+        
+    }
+})
+app.get('/profile/boardpost/:id', async(req, res)=>{
+    try {
+        //get id
+        const id = req.params.id
+        //get Board Posts from DB
+        const findBoard = await BoardPost.find({userID:id})
+        console.log(findBoard)
+        // send them to frontend
+        res.status(200).json(findBoard)
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('Something went wrong')
+    }
+})
+
 connectDB().then(()=>{
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`)
